@@ -1,0 +1,19 @@
+# systemd service for a plain Linux server (without Docker).
+# Install:  sudo cp deploy/orofacial-bot.service /etc/systemd/system/
+#           sudo systemctl daemon-reload && sudo systemctl enable --now orofacial-bot
+# Logs:     journalctl -u orofacial-bot -f
+[Unit]
+Description=OroFacial Telegram booking bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=orofacial
+WorkingDirectory=/opt/orofacial-booking-bot
+ExecStart=/opt/orofacial-booking-bot/.venv/bin/python -m bot.main
+Restart=always
+RestartSec=5
+Environment=TZ=Asia/Yerevan
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,4 @@
+python-telegram-bot[job-queue,webhooks]==21.6
+google-api-python-client>=2.100
+google-auth>=2.23
+PyYAML>=6.0

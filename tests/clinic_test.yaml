@@ -1,0 +1,121 @@
+# OroFacial booking bot — clinic settings.
+# Copy this file to config/clinic.yaml and edit it. Restart the bot after changes.
+# Everything the clinic may want to change (doctors, hours, services, prices, contacts) lives here.
+
+clinic:
+  name: OroFacial
+  full_name: OroFacial Artsakh
+  open: "09:00"            # clinic opening time (doctor shifts are cut to these hours)
+  close: "18:00"
+  phone: "+374 10 529529"
+  mobile: "+374 97 293444"
+  hours_text: "Երկ–Ուրբ 09:00–18:00"
+  address_short: "Երևան, Նալբանդյան 37, 3-րդ մուտք, 1-ին հարկ, 25В"
+  address_lines:
+    - "OroFacial Artsakh"
+    - "Երևան, Նալբանդյան փողոց 37"
+    - "3-րդ մուտք, 1-ին հարկ, 25В"
+  links:
+    telegram: "https://t.me/+37497293444"
+    whatsapp: "https://wa.me/37497293444"
+    viber: "https://viber.click/+37497293444"
+    instagram: "https://www.instagram.com/orofacialartsakh"
+    route: "https://yandex.com/maps/?rtext=~40.183065%2C44.522032&rtt=auto"
+    map: "https://yandex.com/maps/org/orofacial_artsakh/42903507307/"
+    reviews: "https://yandex.com/maps/org/orofacial_artsakh/42903507307/reviews/"
+
+booking:
+  step_minutes: 30          # start times are offered every 30 minutes
+  lead_minutes: 15          # no booking closer than 15 minutes from now
+  max_days_ahead: 62        # how far ahead patients may book
+  request_ttl_hours: 2      # a request waits this long for the doctor's answer
+  # Calendar event titles: when several doctors share ONE calendar, events are matched
+  # to a doctor by the doctor's name in the event title.
+  event_title_prefix: ""    # e.g. "[TEST] " while testing
+
+# Specialty keys -> service name shown to patients + default visit length.
+specialties:
+  general:      { name: "Ընդհանուր խորհրդատվություն", minutes: 30 }
+  pediatric:    { name: "Մանկական ստոմատոլոգիա", minutes: 30 }
+  orthodontics: { name: "Օրթոդոնտիա", minutes: 60 }
+  surgery:      { name: "Ատամնաբուժական վիրաբուժություն", minutes: 90 }
+
+# "Choose by service" menu (button label = specialty name).
+service_menu: [general, pediatric, orthodontics]
+
+# Visit reasons asked right after the doctor is chosen. They set the visit length.
+# Prices are SAMPLE values — replace them with the clinic's real prices.
+reasons:
+  - { key: consult, label: "🩺 Խորհրդատվություն", name: "Խորհրդատվություն / զննում", minutes: 30, price: "5 000 ֏", specialties: [general, pediatric, orthodontics, surgery] }
+  - { key: pain,    label: "⚡ Սուր ցավ", name: "Սուր ցավ (շտապ այց)", minutes: 30, price: "8 000 ֏-ից", specialties: [general, pediatric, orthodontics, surgery] }
+  - { key: treat,   label: "🦷 Ատամի բուժում", name: "Ատամի բուժում (կարիես, լցոնում)", minutes: 60, price: "15 000 ֏-ից", specialties: [general, pediatric] }
+  - { key: clean,   label: "🪥 Մասնագիտական մաքրում", name: "Մասնագիտական մաքրում", minutes: 60, price: "20 000 ֏", specialties: [general] }
+  - { key: ortho,   label: "😁 Օրթոդոնտիկ բուժում", name: "Օրթոդոնտիկ բուժում (բրեկետներ, կապեր)", minutes: 60, price: "30 000 ֏-ից", specialties: [orthodontics] }
+  - { key: surgery, label: "🔧 Հեռացում / վիրահատություն", name: "Ատամի հեռացում / վիրահատություն", minutes: 90, price: "25 000 ֏-ից", specialties: [surgery] }
+
+price_note: "Գները նախնական են․ վերջնական արժեքը բժիշկը կասի զննումից հետո։"
+
+# Doctors. calendar_id = the doctor's Google Calendar ID (share it with the service account).
+# approver_chat_id = Telegram chat ID of the person who approves this doctor's requests
+# (send /myid to the bot to see your chat ID). The same person may approve for several doctors.
+# shift: start/end on Mon–Thu, friday_end optional. Bios and hours are SAMPLE texts.
+doctors:
+  - key: aram
+    name: "Արամ Սարգսյան"
+    specialty: general
+    calendar_id: "shared-cal"
+    approver_chat_id: "9"
+    info_label: "ℹ️ Արամի մասին"
+    shift: { start: "09:00", end: "15:00" }
+    hours_text: "Երկ–Ուրբ 09:00–15:00"
+    bio: "Ընդհանուր ստոմատոլոգ · 12 տարվա փորձ\nԱխտորոշում, կարիեսի բուժում, լցոնումներ, կանխարգելիչ զննումներ։"
+  - key: ani
+    name: "Անի Մկրտչյան"
+    specialty: general
+    calendar_id: "shared-cal"
+    approver_chat_id: "9"
+    info_label: "ℹ️ Անիի մասին"
+    shift: { start: "12:00", end: "18:00" }
+    hours_text: "Երկ–Ուրբ 12:00–18:00"
+    bio: "Ընդհանուր ստոմատոլոգ · 8 տարվա փորձ\nԳեղագիտական վերականգնումներ, լցոնումներ, ատամների մաքրում։"
+  - key: lilit
+    name: "Լիլիթ Հարությունյան"
+    specialty: general
+    calendar_id: "shared-cal"
+    approver_chat_id: "9"
+    info_label: "ℹ️ Լիլիթի մասին"
+    shift: { start: "10:00", end: "16:00" }
+    hours_text: "Երկ–Ուրբ 10:00–16:00"
+    bio: "Ընդհանուր ստոմատոլոգ · 6 տարվա փորձ\nԿարիեսի բուժում, մասնագիտական մաքրում, խորհրդատվություն։"
+  - key: narek
+    name: "Նարեկ Հովհաննիսյան"
+    specialty: orthodontics
+    calendar_id: "shared-cal"
+    approver_chat_id: "9"
+    info_label: "ℹ️ Նարեկի մասին"
+    shift: { start: "10:00", end: "17:00", friday_end: "16:00" }
+    hours_text: "Երկ–Հնգ 10:00–17:00, Ուրբ 10:00–16:00"
+    bio: "Օրթոդոնտ · 10 տարվա փորձ\nԿծվածքի շտկում, բրեկետ-համակարգեր, կապեր, ելուստներ։"
+  - key: mariam
+    name: "Մարիամ Պետրոսյան"
+    specialty: pediatric
+    calendar_id: "shared-cal"
+    approver_chat_id: "9"
+    info_label: "ℹ️ Մարիամի մասին"
+    shift: { start: "09:00", end: "16:00" }
+    hours_text: "Երկ–Ուրբ 09:00–16:00"
+    bio: "Մանկական ստոմատոլոգ · 9 տարվա փորձ\nԵրեխաների ատամների բուժում և կանխարգելում՝ հանգիստ և ընկերական մթնոլորտում։"
+  - key: davit
+    name: "Դավիթ Գրիգորյան"
+    specialty: surgery
+    calendar_id: "shared-cal"
+    approver_chat_id: "9"
+    info_label: "ℹ️ Դավթի մասին"
+    shift: { start: "11:00", end: "18:00", friday_end: "17:00" }
+    hours_text: "Երկ–Հնգ 11:00–18:00, Ուրբ 11:00–17:00"
+    bio: "Վիրաբույժ-ստոմատոլոգ · 15 տարվա փորձ\nԱտամների հեռացում, իմաստության ատամներ, վիրահատական միջամտություններ։"
+
+# Optional extra working days (e.g. a Saturday shift): date -> doctor key -> [start, end]
+extra_days:
+  "2026-10-10": { aram: ["09:00", "21:00"] }
+#  "2026-10-17": { aram: ["10:00", "14:00"] }

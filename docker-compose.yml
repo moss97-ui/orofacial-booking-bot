@@ -1,0 +1,12 @@
+services:
+  bot:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./config/clinic.yaml:/app/config/clinic.yaml:ro
+      - ./secrets:/app/secrets:ro
+      - ./data:/app/data
+    # Only needed in webhook mode (put a reverse proxy with HTTPS in front of it):
+    # ports:
+    #   - "8080:8080"

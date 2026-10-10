@@ -1,0 +1,13 @@
+# secrets and local data — never commit these
+.env
+secrets/
+*.json.key
+config/clinic.yaml
+data/
+*.sqlite3*
+
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
