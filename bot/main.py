@@ -20,6 +20,7 @@ from .clinic import load_clinic
 from .config import load_settings
 from .db import DB
 from .i18n import I18n
+from .texts import L as LABELS, S as STAFF_LABELS
 from .jobs import run_scheduled
 
 log = logging.getLogger("clinic-bot")
@@ -111,7 +112,10 @@ def build_application():
         log.warning("Some doctors still have a placeholder calendar_id. Set CALENDAR_ID or edit the clinic config.")
     if any(str(d["approver_chat_id"]).startswith("REPLACE_WITH") for d in clinic.active_doctors()):
         log.warning("Some doctors still have a placeholder approver_chat_id. Set APPROVER_CHAT_ID or edit the clinic config.")
-    i18n = I18n(settings.i18n_file, clinic.languages)
+    i18n = I18n(settings.i18n_file, clinic.languages, extra=clinic.i18n_extra or None, vocab=clinic.vocabulary or None,
+                labels=list(LABELS.values()) + list(STAFF_LABELS.values()))
+    if clinic.vocabulary:
+        log.info("Business wording: %s", clinic.vocabulary)
     if i18n.enabled:
         log.info("Languages: %s (language choice on /start)", ", ".join(clinic.languages))
 

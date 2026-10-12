@@ -62,10 +62,13 @@ def _day_window(clinic: Clinic, doctor_key: str, day: str):
     if not sh:
         return None, "no_shift"
     dow = weekday(day)
-    if dow in (0, 6) and not extra:
+    wk = sh.get("saturday") if dow == 6 else sh.get("sunday") if dow == 0 else None
+    if dow in (0, 6) and not extra and not wk:
         return None, "weekend"
     if extra:
         return (at(day, extra[0]), at(day, extra[1])), ""
+    if wk:
+        return (max(at(day, wk[0]), at(day, clinic.info["open"])), min(at(day, wk[1]), at(day, clinic.info["close"]))), ""
     end_hm = sh.get("friday_end") if dow == 5 and sh.get("friday_end") else sh["end"]
     return (max(at(day, sh["start"]), at(day, clinic.info["open"])), min(at(day, end_hm), at(day, clinic.info["close"]))), ""
 

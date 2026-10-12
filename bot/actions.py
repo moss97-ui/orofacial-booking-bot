@@ -38,6 +38,8 @@ class Bot:
     # ------------------------------------------------------------------ one Telegram update
     async def handle_update(self, p: dict) -> None:
         """Language step (only when several languages are configured), then router + action."""
+        if not self.i18n.enabled and self.i18n.vocab:
+            p = self.i18n.incoming(p, {})
         if self.i18n.enabled:
             saved = self.db.get_lang(p["chat_id"]) if p.get("chat_id") and self.db.has_lang(p["chat_id"]) else ""
             p = self.i18n.incoming(p, {p["chat_id"]: saved} if saved else {})
@@ -102,15 +104,19 @@ class Bot:
             await self.send(r["chat_id"], "Խնդրում ենք ընտրել բժշկին։\n" + INFO_HINT, kb=self.doctor_list_kb(docs))
         elif a == "service_menu":
             kb = [[self.clinic.service_name(sp)] for sp in self.clinic.service_menu] + [NAV]
-            await self.send(r["chat_id"], "Խնդրում ենք ընտրել ծառայության տեսակը։\nԵթե վստահ չեք, ընտրեք «"
-                            + self.clinic.service_name("general") + "»՝ բժիշկը կզննի և կառաջարկի հետագա քայլերը։", kb=kb)
+            if self.clinic.service_name("general"):
+                await self.send(r["chat_id"], "Խնդրում ենք ընտրել ծառայության տեսակը։\nԵթե վստահ չեք, ընտրեք «"
+                                + self.clinic.service_name("general") + "»՝ բժիշկը կզննի և կառաջարկի հետագա քայլերը։", kb=kb)
+            else:
+                await self.send(r["chat_id"], "Խնդրում ենք ընտրել ծառայության տեսակը։", kb=kb)
         else:
-            spec = {"service_general": "general", "service_pediatric": "pediatric", "service_ortho": "orthodontics"}[a]
+            spec = {"service_general": "general", "service_pediatric": "pediatric", "service_ortho": "orthodontics"}.get(a) \
+                or next((k for k, v in self.clinic.specialties.items() if v.get("name") == r["service"]), "")
             ds = [d for d in docs if d["specialty"] == spec]
             await self.send(r["chat_id"], "Ընտրեք բժշկին՝ " + self.clinic.service_name(spec) + " այցի համար։\n" + INFO_HINT,
                             kb=self.doctor_list_kb(ds))
 
-    a_doctor_menu = a_service_menu = a_service_general = a_service_pediatric = a_service_ortho = _menu
+    a_doctor_menu = a_service_menu = a_service_general = a_service_pediatric = a_service_ortho = a_service_pick = _menu
 
     async def a_ask_reason(self, r, p):
         self.db.upsert_session(r["chat_id"], appointment_date="", doctor_key=r["doctor_key"], doctor_name=r["doctor_name"],

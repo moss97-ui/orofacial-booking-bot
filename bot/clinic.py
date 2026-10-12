@@ -20,6 +20,8 @@ class Clinic:
     extra_days: dict = field(default_factory=dict)
     phrases: dict = field(default_factory=dict)   # clinic-name wording used inside fixed texts
     languages: list = field(default_factory=lambda: ["hy"])  # more than one -> language choice on /start
+    vocabulary: str = ""      # business wording file, e.g. i18n/salon-vocab.json (beauty salon)
+    i18n_extra: str = ""      # extra [hy, en, ru] rows for this business's own services and names
 
     # --- lookups -------------------------------------------------------------
     def active_doctors(self) -> list:
@@ -43,6 +45,20 @@ class Clinic:
     def shift(self, doctor_key: str):
         d = self.doctor(doctor_key)
         return (d or {}).get("shift")
+
+    def works_on(self, doctor: dict, dow: int) -> bool:
+        """Regular working day? Mon–Fri when a shift exists; Saturday / Sunday only when the shift lists them."""
+        sh = doctor.get("shift") or {}
+        if not sh:
+            return False
+        if dow == 6:
+            return bool(sh.get("saturday"))
+        if dow == 0:
+            return bool(sh.get("sunday"))
+        return True
+
+    def has_weekend_hours(self) -> bool:
+        return any((d.get("shift") or {}).get("saturday") or (d.get("shift") or {}).get("sunday") for d in self.active_doctors())
 
 
 def load_clinic(path: str | Path) -> Clinic:
@@ -95,4 +111,6 @@ def load_clinic(path: str | Path) -> Clinic:
         extra_days=raw.get("extra_days") or {},
         phrases=phrases,
         languages=languages,
+        vocabulary=str(raw.get("vocabulary") or ""),
+        i18n_extra=str(raw.get("i18n_extra") or ""),
     )

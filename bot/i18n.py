@@ -85,33 +85,84 @@ def build_packs(data: dict | None, now: int) -> tuple[dict, dict]:
     return P, R
 
 
-class I18n:
-    """Holds the translation file and the per-day packs. `enabled` is False for an Armenian-only clinic."""
+def load_vocab(path: str | Path | None) -> dict:
+    """Business vocabulary (e.g. a beauty salon: doctor -> master, patient -> client, clinic -> salon).
+    File: {"hy": [[from, to], ...], "en": [...], "ru": [...]}. Applied to every outgoing text after the
+    bot has written it in Armenian; longer phrases are replaced first."""
+    if not path:
+        return {}
+    raw = json.loads(Path(path).read_text(encoding="utf-8"))
+    return {lg: sorted(([a, b] for a, b in raw.get(lg, []) if a), key=lambda p: -len(p[0])) for lg in ("hy", "en", "ru")}
 
-    def __init__(self, path: str | Path | None, languages: list[str]):
+
+class I18n:
+    """Holds the translation file and the per-day packs. `enabled` is False for an Armenian-only clinic.
+    `extra`: more [hy, en, ru] rows (a business's own services, names, address).
+    `vocab`: business vocabulary (see load_vocab); `labels`: Armenian button labels to map back exactly."""
+
+    def __init__(self, path: str | Path | None, languages: list[str], extra: str | Path | None = None,
+                 vocab: str | Path | None = None, labels: list[str] | None = None):
         self.languages = languages
         self.enabled = len(languages) > 1
         self.data = None
         if self.enabled and path:
             self.data = json.loads(Path(path).read_text(encoding="utf-8"))
+            if extra:
+                self.data["static"] = self.data["static"] + json.loads(Path(extra).read_text(encoding="utf-8"))["static"]
+        self.vocab = load_vocab(vocab)
+        # Button labels as the business shows them -> the label the router knows.
+        self.back = {}
+        if self.vocab:
+            for lb in labels or []:
+                shown = apply(self.vocab["hy"], lb)
+                if shown != lb:
+                    self.back[shown] = lb
         self._day = None
         self._packs = ({"hy": [], "en": [], "ru": []}, {"hy": [], "en": [], "ru": []})
+
+    def _with_vocab(self, P: dict) -> tuple[dict, dict]:
+        """Packs whose Armenian side already uses the business vocabulary, and whose translations do too."""
+        P2, R2 = {"hy": [], "en": [], "ru": []}, {"hy": [], "en": [], "ru": []}
+        for lg in ("en", "ru"):
+            punct = P[lg][len(P[lg]) - len((self.data or {}).get(lg, {}).get("punct") or []):] if self.data else []
+            body = P[lg][:len(P[lg]) - len(punct)]
+            seen, fwd = set(), []
+            for a, b in body:
+                a2, b2 = apply(self.vocab["hy"], a), apply(self.vocab[lg], b)
+                if a2 and b2 and a2 != b2 and a2 not in seen:
+                    seen.add(a2)
+                    fwd.append([a2, b2])
+            fwd.sort(key=lambda p: -js_len(p[0]))
+            P2[lg] = fwd + punct
+            rs, rev = set(), []
+            for a, b in fwd:
+                if js_len(b) >= 3 and _LATIN_CYR.search(b) and b not in rs:
+                    rs.add(b)
+                    rev.append([b, a])
+            rev.sort(key=lambda p: -js_len(p[0]))
+            R2[lg] = rev
+        return P2, R2
 
     def packs(self) -> tuple[dict, dict]:
         now = now_ms()
         day = _ymd(now)  # date labels cover 7 days back .. 100 days ahead of today; rebuilt once a day
         if day != self._day:
-            self._packs, self._day = build_packs(self.data, now), day
+            packs = build_packs(self.data, now)
+            self._packs, self._day = (self._with_vocab(packs[0]) if self.vocab else packs), day
         return self._packs
 
     def translate(self, text, lang: str) -> str:
-        if not self.enabled or lang == "hy" or text is None:
+        if text is None:
+            return text
+        if self.vocab:
+            text = apply(self.vocab["hy"], text)
+        if not self.enabled or lang == "hy":
             return text
         return apply(self.packs()[0].get(lang) or [], text)
 
     def translate_keyboard(self, rows, lang: str):
         """Translates button labels; URL / callback data stay as they are."""
-        if not rows or not self.enabled or lang == "hy":
+        if not rows or (not self.vocab and (not self.enabled or lang == "hy")):
             return rows
         out = []
         for row in rows:
@@ -133,6 +184,8 @@ class I18n:
         p["ask_lang"], p["set_lang"] = False, ""
         if not self.enabled:
             p["lang"] = "hy"
+            if self.back and p.get("text") in self.back:
+                p["text"] = self.back[p["text"]]
             return p
         chat = p.get("chat_id") or ""
         if p["kind"] == "message" and p.get("text") in CHOICE:
@@ -146,4 +199,6 @@ class I18n:
             t2 = apply(self.packs()[1].get(p["lang"]) or [], p["text"])
             if not _LATIN_CYR.search(t2):
                 p["text"] = t2
+        if self.back and p.get("text") in self.back:
+            p["text"] = self.back[p["text"]]
         return p

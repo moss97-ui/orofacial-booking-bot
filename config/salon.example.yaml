@@ -1,0 +1,258 @@
+# Beauty salon booking bot — salon settings (same program as the clinic bot, salon mode).
+# Copy to config/clinic.yaml, or paste into the CLINIC_CONFIG_YAML variable on Railway, then edit.
+# "doctors" are the salon's specialists (masters); "specialties" are service categories; "reasons" are services.
+# Prices, bios and hours are SAMPLE values. Each specialist may add "saturday" / "sunday" hours to the shift.
+# When you add or rename a specialist or service, add its English and Russian text to i18n/salon-i18n.json.
+languages:
+- hy
+- en
+- ru
+vocabulary: i18n/salon-vocab.json
+i18n_extra: i18n/salon-i18n.json
+clinic:
+  name: Գեղեցկության սրահ
+  open: '10:00'
+  close: '20:00'
+  phone: +374 10 000000
+  mobile: +374 90 000000
+  hours_text: Երկ–Շբթ 10:00–20:00
+  address_short: Երևան, Կենտրոն
+  address_lines:
+  - Գեղեցկության սրահ
+  - Երևան, Կենտրոն
+  phrases:
+    welcome_place: մեր սրահ
+    thanks_to: մեր սրահին
+    contact_title: Կապ սրահի հետ
+    reminder_at: մեր սրահում
+    rating_at: մեր սրահում
+    created_by: ամրագրման բոտի
+  links:
+    telegram: https://t.me/+37490000000
+    whatsapp: https://wa.me/37490000000
+    viber: https://viber.click/+37490000000
+    instagram: https://www.instagram.com/
+    route: https://yandex.com/maps/?rtext=~40.177628%2C44.512546&rtt=auto
+    map: https://yandex.com/maps/?ll=44.512546%2C40.177628&z=16&pt=44.512546%2C40.177628
+    reviews: https://yandex.com/maps/?ll=44.512546%2C40.177628&z=16&pt=44.512546%2C40.177628
+booking:
+  step_minutes: 30
+  lead_minutes: 15
+  max_days_ahead: 62
+  request_ttl_hours: 2
+  event_title_prefix: ''
+specialties:
+  hair:
+    name: Մազերի խնամք
+    minutes: 60
+  barber:
+    name: Տղամարդկանց սանրվածք
+    minutes: 30
+  nails:
+    name: Մանիկյուր և պեդիկյուր
+    minutes: 60
+  brows:
+    name: Հոնքեր և թարթիչներ
+    minutes: 30
+  face:
+    name: Դեմքի խնամք
+    minutes: 60
+service_menu:
+- hair
+- barber
+- nails
+- brows
+- face
+reasons:
+- key: cut_w
+  label: ✂️ Կանացի սանրվածք
+  name: Կանացի սանրվածք և հարդարում
+  minutes: 60
+  price: 8 000 ֏-ից
+  specialties:
+  - hair
+- key: color
+  label: 🎨 Մազերի ներկում
+  name: Մազերի ներկում
+  minutes: 120
+  price: 20 000 ֏-ից
+  specialties:
+  - hair
+- key: blow
+  label: 💨 Հարդարում
+  name: Մազերի հարդարում
+  minutes: 60
+  price: 6 000 ֏
+  specialties:
+  - hair
+- key: cut_m
+  label: 💈 Տղամարդու սանրվածք
+  name: Տղամարդու սանրվածք
+  minutes: 30
+  price: 5 000 ֏
+  specialties:
+  - barber
+- key: beard
+  label: 🧔 Մորուք
+  name: Մորուքի ձևավորում
+  minutes: 30
+  price: 3 000 ֏
+  specialties:
+  - barber
+- key: cut_bd
+  label: 💈 Սանրվածք + մորուք
+  name: Սանրվածք և մորուքի ձևավորում
+  minutes: 60
+  price: 7 000 ֏
+  specialties:
+  - barber
+- key: mani
+  label: 💅 Մանիկյուր
+  name: Դասական մանիկյուր
+  minutes: 60
+  price: 5 000 ֏
+  specialties:
+  - nails
+- key: gel
+  label: 💅 Գել-լաք
+  name: Մանիկյուր գել-լաքով
+  minutes: 90
+  price: 8 000 ֏
+  specialties:
+  - nails
+- key: pedi
+  label: 🦶 Պեդիկյուր
+  name: Պեդիկյուր
+  minutes: 90
+  price: 10 000 ֏
+  specialties:
+  - nails
+- key: ext
+  label: 💎 Երկարացում
+  name: Եղունգների երկարացում
+  minutes: 120
+  price: 15 000 ֏-ից
+  specialties:
+  - nails
+- key: brow
+  label: ✏️ Հոնքեր
+  name: Հոնքերի ձևավորում և ներկում
+  minutes: 30
+  price: 4 000 ֏
+  specialties:
+  - brows
+- key: lash_e
+  label: 👁 Թարթիչների երկարացում
+  name: Թարթիչների երկարացում
+  minutes: 120
+  price: 15 000 ֏
+  specialties:
+  - brows
+- key: lash_l
+  label: ✨ Լամինացիա
+  name: Թարթիչների լամինացիա
+  minutes: 60
+  price: 10 000 ֏
+  specialties:
+  - brows
+- key: clean
+  label: 🧖‍♀️ Դեմքի մաքրում
+  name: Դեմքի մաքրում
+  minutes: 90
+  price: 15 000 ֏
+  specialties:
+  - face
+- key: peel
+  label: 🍃 Պիլինգ
+  name: Դեմքի պիլինգ
+  minutes: 60
+  price: 12 000 ֏
+  specialties:
+  - face
+- key: massage
+  label: 💆‍♀️ Դեմքի մերսում
+  name: Դեմքի մերսում
+  minutes: 60
+  price: 8 000 ֏
+  specialties:
+  - face
+price_note: Գները նախնական են․ վերջնական արժեքը կախված է աշխատանքի ծավալից։
+doctors:
+- key: narine
+  name: Նարինե Սարգսյան
+  specialty: hair
+  calendar_id: REPLACE_WITH_CALENDAR_ID@group.calendar.google.com
+  approver_chat_id: REPLACE_WITH_TELEGRAM_CHAT_ID
+  info_label: ℹ️ Նարինեի մասին
+  shift:
+    start: '10:00'
+    end: '19:00'
+    saturday:
+    - '10:00'
+    - '17:00'
+  hours_text: Երկ–Ուրբ 10:00–19:00, Շբթ 10:00–17:00
+  bio: 'Վարսահարդար-կոլորիստ · 10 տարվա փորձ
+
+    Կանացի սանրվածքներ, ներկում, բալայաժ, հարդարում։'
+- key: arman
+  name: Արման Հակոբյան
+  specialty: barber
+  calendar_id: REPLACE_WITH_CALENDAR_ID@group.calendar.google.com
+  approver_chat_id: REPLACE_WITH_TELEGRAM_CHAT_ID
+  info_label: ℹ️ Արմանի մասին
+  shift:
+    start: '11:00'
+    end: '20:00'
+    saturday:
+    - '11:00'
+    - '18:00'
+  hours_text: Երկ–Ուրբ 11:00–20:00, Շբթ 11:00–18:00
+  bio: 'Բարբեր · 7 տարվա փորձ
+
+    Տղամարդկանց սանրվածքներ, ֆեյդ, մորուքի ձևավորում։'
+- key: ani
+  name: Անի Մկրտչյան
+  specialty: nails
+  calendar_id: REPLACE_WITH_CALENDAR_ID@group.calendar.google.com
+  approver_chat_id: REPLACE_WITH_TELEGRAM_CHAT_ID
+  info_label: ℹ️ Անիի մասին
+  shift:
+    start: '10:00'
+    end: '19:00'
+    saturday:
+    - '10:00'
+    - '16:00'
+  hours_text: Երկ–Ուրբ 10:00–19:00, Շբթ 10:00–16:00
+  bio: 'Մանիկյուրի և պեդիկյուրի վարպետ · 6 տարվա փորձ
+
+    Գել-լաք, երկարացում, եղունգների դիզայն։'
+- key: mariam
+  name: Մարիամ Պետրոսյան
+  specialty: brows
+  calendar_id: REPLACE_WITH_CALENDAR_ID@group.calendar.google.com
+  approver_chat_id: REPLACE_WITH_TELEGRAM_CHAT_ID
+  info_label: ℹ️ Մարիամի մասին
+  shift:
+    start: '11:00'
+    end: '19:00'
+  hours_text: Երկ–Ուրբ 11:00–19:00
+  bio: 'Հոնքերի և թարթիչների վարպետ · 5 տարվա փորձ
+
+    Հոնքերի ձևավորում, թարթիչների երկարացում և լամինացիա։'
+- key: lilit
+  name: Լիլիթ Հարությունյան
+  specialty: face
+  calendar_id: REPLACE_WITH_CALENDAR_ID@group.calendar.google.com
+  approver_chat_id: REPLACE_WITH_TELEGRAM_CHAT_ID
+  info_label: ℹ️ Լիլիթի մասին
+  shift:
+    start: '10:00'
+    end: '18:00'
+    saturday:
+    - '10:00'
+    - '15:00'
+  hours_text: Երկ–Ուրբ 10:00–18:00, Շբթ 10:00–15:00
+  bio: 'Կոսմետոլոգ · 8 տարվա փորձ
+
+    Դեմքի մաքրում, պիլինգ, մերսում և խնամք։'
+extra_days: {}

@@ -174,6 +174,26 @@ long polling, so it needs no domain or open port.
 
 Translations: edit `n8n/clinic-i18n.json` on GitHub; Railway redeploys automatically with the new texts.
 
+## Beauty salon mode
+
+The same program runs a **beauty / nail salon** booking bot. Start from `config/salon.example.yaml`:
+
+- **Wording:** "specialist / client / salon" (Armenian «վարպետ / հաճախորդ / սրահ», Russian «мастер / клиент / салон»)
+  instead of "doctor / patient / clinic", and no
+  medical disclaimer. This comes from `i18n/salon-vocab.json`, which the config names in `vocabulary:`.
+- **5 service categories** in "Choose by service": hair care, men's haircut, manicure & pedicure, brows & lashes, facial care.
+- **16 common services** with their length and a sample price: women's haircut, colouring, blow-dry, men's haircut,
+  beard, haircut + beard, manicure, gel polish, pedicure, nail extensions, brows, lash extensions, lash lift,
+  facial cleansing, peel, facial massage.
+- **5 specialists** (sample names and bios), one per category, with Saturday hours (`saturday: ["10:00", "17:00"]`
+  in the shift; `sunday` works the same way).
+- English and Russian texts for the salon's own services, names and address are in `i18n/salon-i18n.json`
+  (config: `i18n_extra:`). When you add a specialist or a service, add a row `[Armenian, English, Russian]` there.
+
+Run it like the clinic bot, with `CLINIC_CONFIG=config/salon.example.yaml` (and `CALENDAR_ID`, `APPROVER_CHAT_ID`), or
+paste your edited salon YAML into `CLINIC_CONFIG_YAML` on Railway. `tests/test_salon.py` books visits in all three
+languages and checks that no clinic word or untranslated Armenian reaches a client.
+
 ## 5. Backups
 
 All bookings are in one file: `data/bot.sqlite3`. Copy it regularly, for example with a daily cron job:

@@ -38,6 +38,11 @@ PATIENT_GUIDE = ("📖 Ինչպես ամրագրել այց — 4 քայլ\n\n"
 MENU_SERVICE_ACTION = {"general": "service_general", "pediatric": "service_pediatric", "orthodontics": "service_ortho"}
 
 
+def svc_action(spec: str) -> str:
+    """The original three categories keep their n8n action names; any other category uses 'service_pick'."""
+    return MENU_SERVICE_ACTION.get(spec, "service_pick")
+
+
 def norm_time(t: str) -> str:
     m = re.match(r"^(\d{1,2})[:.](\d{2})$", t or "") or re.match(r"^(\d{2})(\d{2})$", t or "")
     if not m:
@@ -158,7 +163,10 @@ def route(p: dict, s: dict, clinic: Clinic, req: dict | None, now: int) -> dict:
         if t > ymd(now + MAX_AHEAD * DAY):
             return "Ամրագրումը հնարավոր է առավելագույնը 2 ամիս առաջ։ Ընտրեք ավելի մոտ ամսաթիվ։"
         if weekday(t) in (0, 6) and t not in clinic.extra_days:
-            return "Կլինիկան աշխատում է երկուշաբթիից ուրբաթ։ Ընտրեք աշխատանքային օր։"
+            if not clinic.has_weekend_hours():
+                return "Կլինիկան աշխատում է երկուշաբթիից ուրբաթ։ Ընտրեք աշխատանքային օր։"
+            if not any(clinic.works_on(d, weekday(t)) for d in doctors):
+                return "Այդ օրը չենք աշխատում։ Ընտրեք աշխատանքային օր։"
         return ""
 
     def build_request(d, hm, full_name, phone):
@@ -316,7 +324,7 @@ def route(p: dict, s: dict, clinic: Clinic, req: dict | None, now: int) -> dict:
             while len(labels) < 8 and i < 20:
                 dd = ymd(now + i * DAY)
                 w = weekday(dd)
-                if w not in (0, 6):
+                if w not in (0, 6) or clinic.works_on(d, w):
                     labels.append(MON[int(dd[5:7]) - 1] + " " + str(int(dd[8:10])) + " " + SHORT_DAYS[w])
                 i += 1
             out["block_labels"] = labels
@@ -431,8 +439,8 @@ def route(p: dict, s: dict, clinic: Clinic, req: dict | None, now: int) -> dict:
             doc_ctx(bd); out["month_offset"] = -1; out["action"] = "doctor_chosen"
             return out
         if bd and st == "awaiting_reason":
-            spec = next((k for k, v in SERVICE.items() if v == (s.get("service") or "") and k in MENU_SERVICE_ACTION), None)
-            out["action"] = MENU_SERVICE_ACTION[spec] if spec else "doctor_menu"
+            spec = next((k for k, v in SERVICE.items() if v == (s.get("service") or "") and (k in MENU_SERVICE_ACTION or k in clinic.service_menu)), None)
+            out["action"] = svc_action(spec) if spec else "doctor_menu"
             out["service"] = s.get("service") if spec else ""
             out["menu_stage"] = "menu_service_doctors" if spec else "menu_doctors"
             return out
@@ -529,8 +537,8 @@ def route(p: dict, s: dict, clinic: Clinic, req: dict | None, now: int) -> dict:
 
     menu = {L["chooseDoctor"]: "doctor_menu", L["help"]: "service_menu"}
     for spec in clinic.service_menu:
-        if spec in MENU_SERVICE_ACTION:
-            menu[SERVICE[spec]] = MENU_SERVICE_ACTION[spec]
+        if spec in MENU_SERVICE_ACTION or spec in SERVICE:
+            menu[SERVICE[spec]] = svc_action(spec)
     menu_service = {"doctor_menu": "", "service_general": SERVICE.get("general", ""), "service_pediatric": SERVICE.get("pediatric", ""),
                     "service_ortho": SERVICE.get("orthodontics", "")}
     menu_stage = {"doctor_menu": "menu_doctors", "service_menu": "menu_services", "service_general": "menu_service_doctors",
@@ -543,6 +551,8 @@ def route(p: dict, s: dict, clinic: Clinic, req: dict | None, now: int) -> dict:
         out["action"] = menu[t]; out["menu_stage"] = menu_stage.get(out["action"], "")
         if out["action"] in menu_service:
             out["service"] = menu_service[out["action"]]
+        if out["action"] == "service_pick":   # a category beyond the original three
+            out["service"] = t; out["menu_stage"] = "menu_service_doctors"
         return out
     if picked:
         doc_ctx(picked); out["quick_rebook"] = ""
