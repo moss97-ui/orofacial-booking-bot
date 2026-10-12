@@ -42,7 +42,9 @@ bot/
   clinic.py            reads config/clinic.yaml
 config/clinic.example.yaml   doctors, hours, services, prices, contacts — copy to config/clinic.yaml
 tests/                 parity tests against the n8n code + end-to-end tests
-n8n/                   the original n8n workflow (export, without credentials)
+n8n/                   n8n workflows (exports, without credentials): the original OroFacial bot and the
+                       generic 3-language "Clinic - Booking bot", with its JavaScript in n8n/clinic-code/
+                       (see n8n/README.md)
 deploy/                systemd service file
 ```
 
