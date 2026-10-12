@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 
 from telegram import (InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove,
                       Update)
@@ -18,11 +19,10 @@ from .calendar_service import GoogleCalendar, MemoryCalendar
 from .clinic import load_clinic
 from .config import load_settings
 from .db import DB
+from .i18n import I18n
 from .jobs import run_scheduled
-from .router import route
-from .timeutil import now_ms
 
-log = logging.getLogger("orofacial")
+log = logging.getLogger("clinic-bot")
 
 
 class TelegramMessenger:
@@ -80,7 +80,8 @@ def parse_update(update: Update) -> dict:
         cq = update.callback_query
         msg = cq.message
         data = cq.data or ""
-        lookup = data.split("|", 1)[1] if "|" in data else "__none__"
+        mm = re.fullmatch(r"(ap|rj|cx|cy|nx|ch|ok|r[1-5]|ub)\|(.{1,60})", data)  # same rule as n8n
+        lookup = mm.group(2) if mm else "__none__"
         return {"kind": "callback", "chat_id": str(msg.chat.id if msg else cq.from_user.id), "from_id": str(cq.from_user.id),
                 "username": cq.from_user.username or "", "callback_id": cq.id, "data": data, "text": "",
                 "first_name": cq.from_user.first_name or "", "lookup_request_id": lookup,
@@ -106,8 +107,16 @@ def build_application():
         log.warning("GOOGLE_SERVICE_ACCOUNT_FILE is not set: DRY RUN with an in-memory calendar (nothing is written to Google Calendar).")
         calendar = MemoryCalendar()
 
+    if any(str(d["calendar_id"]).startswith("REPLACE_WITH") for d in clinic.active_doctors()) and settings.google_service_account_file:
+        log.warning("Some doctors still have a placeholder calendar_id. Set CALENDAR_ID or edit the clinic config.")
+    if any(str(d["approver_chat_id"]).startswith("REPLACE_WITH") for d in clinic.active_doctors()):
+        log.warning("Some doctors still have a placeholder approver_chat_id. Set APPROVER_CHAT_ID or edit the clinic config.")
+    i18n = I18n(settings.i18n_file, clinic.languages)
+    if i18n.enabled:
+        log.info("Languages: %s (language choice on /start)", ", ".join(clinic.languages))
+
     app = Application.builder().token(settings.telegram_token).build()
-    bot = Bot(db, clinic, calendar, TelegramMessenger(app))
+    bot = Bot(db, clinic, calendar, TelegramMessenger(app), i18n)
     # One update at a time per chat keeps sessions consistent; different chats run concurrently.
     locks: dict[str, asyncio.Lock] = {}
 
@@ -116,10 +125,7 @@ def build_application():
         key = p["chat_id"] or "?"
         async with locks.setdefault(key, asyncio.Lock()):
             try:
-                session = db.get_session(p["chat_id"]) if p["chat_id"] else {}
-                req = db.get_request(p["lookup_request_id"]) if p["lookup_request_id"] != "__none__" else None
-                out = route(p, session, clinic, req, now_ms())
-                await bot.run(out, p)
+                await bot.handle_update(p)
             except Exception:
                 log.exception("update failed: %s", p)
 

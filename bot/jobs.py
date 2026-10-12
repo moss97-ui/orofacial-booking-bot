@@ -30,7 +30,7 @@ async def run_scheduled(bot: Bot) -> dict:
                 kind = "24h"
             if kind:
                 day = "այսօր" if ymd(start) == ymd(now) else "վաղը"
-                head = "⏰ Հիշեցում՝ Ձեր այցը սկսվում է մոտ 2 ժամից։" if kind == "2h" else "⏰ Հիշեցում՝ " + day + " Ձեր այցն է " + bot.clinic.info["name"] + " կլինիկայում։"
+                head = "⏰ Հիշեցում՝ Ձեր այցը սկսվում է մոտ 2 ժամից։" if kind == "2h" else "⏰ Հիշեցում՝ " + day + " Ձեր այցն է " + bot.clinic.phrases["reminder_at"] + "։"
                 text = (head + "\nԱմսաթիվ՝ " + x["slot_start"][:10] + ", " + x["slot_start"][11:16] + " (Երևան)\nԲժիշկ՝ " + names.get(x["doctor_key"], "")
                         + "\nԾառայություն՝ " + (x["service"] or "—") + "\nԱյցելու՝ " + (x["patient_full_name"] or x["patient_name"] or "—")
                         + "\nՀայտ՝ " + x["request_id"] + "\nԽնդրում ենք հաստատել, որ կգաք, կամ չեղարկել / փոխել ժամը։")
@@ -43,7 +43,7 @@ async def run_scheduled(bot: Bot) -> dict:
                 sent_reminders += 1
         # --- rating after the visit
         if end and not x["rating_asked"] and not int(x.get("rating") or 0) and 30 * MIN <= now - end <= 24 * HOUR:
-            text = ("🦷 Ինչպե՞ս անցավ Ձեր այցը " + bot.clinic.info["name"] + "-ում\nԲժիշկ՝ " + names.get(x["doctor_key"], "")
+            text = ("🦷 Ինչպե՞ս անցավ Ձեր այցը " + bot.clinic.phrases["rating_at"] + "\nԲժիշկ՝ " + names.get(x["doctor_key"], "")
                     + "\nԱմսաթիվ՝ " + x["slot_start"][:10] + ", " + x["slot_start"][11:16]
                     + "\n\nԽնդրում ենք գնահատել այցը 1-ից 5 աստղով (5՝ գերազանց)։ Դա մեզ կօգնի դառնալ ավելի լավը։")
             await bot.send(x["chat_id"], text, inline=[[btn(f"{i}⭐", callback_data=f"r{i}|" + x["request_id"]) for i in range(1, 6)]])

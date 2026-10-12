@@ -8,7 +8,9 @@ import re
 from .calendar_service import CalendarError
 from .clinic import Clinic
 from .db import DB
+from .i18n import ASK_TEXT, LANG_BUTTONS, I18n
 from .reports import build_staff_report
+from .router import route
 from .slots import compute_available_dates, compute_free_slots
 from .texts import (CALENDAR_DOWN, DATE_WAITLIST_HINT, TIME_WAITLIST_HINT, HOME_KB, INFO_HINT, L, NAV, RETRY_KB, S, STAFF_KB, TRY_OTHER, WAITLIST_HINT, WELCOME,
                     WELCOME_KB)
@@ -29,22 +31,48 @@ class Bot:
     """Glue between the router output and the outside world.
     `messenger` sends Telegram messages (see main.TelegramMessenger), `calendar` is Google Calendar or MemoryCalendar."""
 
-    def __init__(self, db: DB, clinic: Clinic, calendar, messenger):
+    def __init__(self, db: DB, clinic: Clinic, calendar, messenger, i18n: I18n | None = None):
         self.db, self.clinic, self.cal, self.tg = db, clinic, calendar, messenger
+        self.i18n = i18n or I18n(None, ["hy"])
+
+    # ------------------------------------------------------------------ one Telegram update
+    async def handle_update(self, p: dict) -> None:
+        """Language step (only when several languages are configured), then router + action."""
+        if self.i18n.enabled:
+            saved = self.db.get_lang(p["chat_id"]) if p.get("chat_id") and self.db.has_lang(p["chat_id"]) else ""
+            p = self.i18n.incoming(p, {p["chat_id"]: saved} if saved else {})
+            if p["ask_lang"]:
+                await self.tg.send(p["chat_id"], ASK_TEXT, reply_kb=LANG_BUTTONS)
+                return
+            if p["set_lang"]:
+                self.db.set_lang(p["chat_id"], p["set_lang"])
+        session = self.db.get_session(p["chat_id"]) if p.get("chat_id") else {}
+        req = self.db.get_request(p["lookup_request_id"]) if p.get("lookup_request_id", "__none__") != "__none__" else None
+        out = route(p, session, self.clinic, req, now_ms())
+        await self.run(out, p)
 
     # ------------------------------------------------------------------ helpers
     @property
     def links(self):
         return self.clinic.info.get("links", {})
 
+    def lang_of(self, chat_id) -> str:
+        return self.db.get_lang(chat_id) if self.i18n.enabled and chat_id else "hy"
+
+    # Every message is translated into the receiver's language just before sending (n8n: the expression in each Telegram node).
     async def send(self, chat_id, text, kb=None, inline=None, remove_kb=False):
-        return await self.tg.send(chat_id, text, reply_kb=kb, inline_kb=inline, remove_kb=remove_kb)
+        lg = self.lang_of(chat_id)
+        return await self.tg.send(chat_id, self.i18n.translate(text, lg), reply_kb=self.i18n.translate_keyboard(kb, lg),
+                                  inline_kb=self.i18n.translate_keyboard(inline, lg), remove_kb=remove_kb)
 
     async def edit(self, r, p, text, inline=None):
-        return await self.tg.edit(r["chat_id"], p.get("message_id"), text, inline_kb=inline or [])
+        lg = self.lang_of(r["chat_id"])
+        return await self.tg.edit(r["chat_id"], p.get("message_id"), self.i18n.translate(text, lg),
+                                  inline_kb=self.i18n.translate_keyboard(inline or [], lg))
 
     async def answer(self, r, text=None):
-        await self.tg.answer(r["callback_id"], r["callback_text"] if text is None else text)
+        t = r["callback_text"] if text is None else text
+        await self.tg.answer(r["callback_id"], self.i18n.translate(t, self.lang_of(r["chat_id"])) if t else t)
 
     def doctor_list_kb(self, docs):
         return [[d["doctor_name"], d["info_label"]] for d in docs] + [NAV]
@@ -64,7 +92,7 @@ class Bot:
                                request_id="", selected_time="", service="", slot_options="", stage="idle",
                                updated_note="restarted with /start", replace_request_id="")
         self.db.update_request(r["old_request_id"], "pending", status="cancelled", decided_by="patient_restart")
-        await self.send(r["chat_id"], WELCOME.format(name=self.clinic.info["name"]), kb=WELCOME_KB)
+        await self.send(r["chat_id"], WELCOME.format(place=self.clinic.phrases["welcome_place"]), kb=WELCOME_KB)
 
     async def _menu(self, r, p):
         self.db.upsert_session(r["chat_id"], service=r["service"], stage=r["menu_stage"], updated_note="menu shown")
@@ -96,8 +124,8 @@ class Bot:
         await self.send(r["chat_id"], r["text"], kb=HOME_KB if r["home_kb"] else None)
 
     async def a_end_chat(self, r, p):
-        await self.send(r["chat_id"], "Շնորհակալություն, որ դիմեցիք " + self.clinic.info["name"]
-                        + " կլինիկային 🦷\nԵրբ ցանկանաք նոր այց ամրագրել, սեղմեք «🏠 Գլխավոր մենյու»։", kb=[[L["home"], L["myBookings"]]])
+        await self.send(r["chat_id"], "Շնորհակալություն, որ դիմեցիք " + self.clinic.phrases["thanks_to"]
+                        + " 🦷\nԵրբ ցանկանաք նոր այց ամրագրել, սեղմեք «🏠 Գլխավոր մենյու»։", kb=[[L["home"], L["myBookings"]]])
 
     async def a_confirm_cancel(self, r, p):
         await self.send(r["chat_id"], "Ձեր հայտը դեռ սպասում է բժշկի պատասխանին։\nԵթե սկսեք նոր ամրագրում, այս հայտը կչեղարկվի։ Չեղարկե՞լ այն։",
@@ -105,7 +133,7 @@ class Bot:
 
     async def a_contact(self, r, p):
         c, lk = self.clinic.info, self.links
-        text = ("📞 Կապ " + c["name"] + " կլինիկայի հետ\n\n☎️ Հեռախոս՝ " + c["phone"] + "\n📱 Բջջային, WhatsApp, Viber, Telegram՝ " + c["mobile"]
+        text = ("📞 " + self.clinic.phrases["contact_title"] + "\n\n☎️ Հեռախոս՝ " + c["phone"] + "\n📱 Բջջային, WhatsApp, Viber, Telegram՝ " + c["mobile"]
                 + "\n\n🕘 Աշխատանքային ժամեր՝ " + c["hours_text"] + "\n📍 " + c["address_short"]
                 + "\n\nԶանգահարելու համար սեղմեք համարի վրա։ Գրելու կամ Telegram-ով զանգելու համար ընտրեք ստորև։")
         inline = [[btn("💬 Telegram՝ գրել / զանգել", url=lk["telegram"])],
@@ -229,7 +257,7 @@ class Bot:
             await self.edit(r, p, msg + "\n\n⚠️ Ժամն այլևս ազատ չէ, այցը չի ստեղծվել։ Պացիենտը տեղեկացվել է։")
             return
         prefix = self.clinic.booking.get("event_title_prefix") or ""
-        desc = ("Ստեղծվել է " + self.clinic.info["name"] + " բոտի կողմից բժշկի հաստատումից հետո։\nՀայտ՝ " + r["request_id"] + "\nՊացիենտ՝ " + r["patient_name"]
+        desc = ("Ստեղծվել է " + self.clinic.phrases["created_by"] + " կողմից բժշկի հաստատումից հետո։\nՀայտ՝ " + r["request_id"] + "\nՊացիենտ՝ " + r["patient_name"]
                 + "\nՀեռախոս՝ " + (r["phone"] or "—") + "\nTelegram՝ " + ("@" + r["username"] if r["username"] else "—")
                 + "\nԾառայություն՝ " + r["service"] + "\nԲժիշկ՝ " + r["doctor_name"])
         try:

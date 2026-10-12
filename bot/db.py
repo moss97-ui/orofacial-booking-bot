@@ -1,6 +1,6 @@
 """SQLite storage: patient sessions, booking requests and the waitlist.
 
-Replaces the three n8n data tables (dental_patient_sessions, dental_booking_requests, dental_waitlist).
+Replaces the n8n data tables (patient sessions, booking requests, waitlist, user languages).
 Doctors live in config/clinic.yaml instead of a table.
 """
 from __future__ import annotations
@@ -37,6 +37,9 @@ CREATE TABLE IF NOT EXISTS requests (
 );
 CREATE INDEX IF NOT EXISTS idx_requests_doctor ON requests (doctor_key, slot_start);
 CREATE INDEX IF NOT EXISTS idx_requests_chat ON requests (chat_id);
+CREATE TABLE IF NOT EXISTS user_langs (
+  chat_id TEXT PRIMARY KEY, lang TEXT DEFAULT '', createdAt TEXT, updatedAt TEXT
+);
 CREATE TABLE IF NOT EXISTS waitlist (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   {", ".join(c + " TEXT DEFAULT ''" for c in WAITLIST_COLS)},
@@ -72,6 +75,24 @@ class DB:
     @staticmethod
     def _stamp() -> str:
         return iso_utc(now_ms())
+
+    # --- languages (n8n table clinic_user_langs) ------------------------------------
+    def all_langs(self) -> dict:
+        return {r["chat_id"]: r["lang"] for r in self._rows("SELECT chat_id, lang FROM user_langs") if r["chat_id"] and r["lang"]}
+
+    def get_lang(self, chat_id) -> str:
+        rows = self._rows("SELECT lang FROM user_langs WHERE chat_id = ?", (str(chat_id),))
+        return (rows[0]["lang"] if rows else "") or "hy"
+
+    def has_lang(self, chat_id) -> bool:
+        return bool(self._rows("SELECT 1 FROM user_langs WHERE chat_id = ? AND lang != ''", (str(chat_id),)))
+
+    def set_lang(self, chat_id, lang: str) -> None:
+        ts = self._stamp()
+        with self.lock:
+            self.conn.execute("INSERT INTO user_langs (chat_id, lang, createdAt, updatedAt) VALUES (?, ?, ?, ?) "
+                              "ON CONFLICT(chat_id) DO UPDATE SET lang = excluded.lang, updatedAt = excluded.updatedAt",
+                              (str(chat_id), lang, ts, ts))
 
     # --- sessions --------------------------------------------------------------
     def get_session(self, chat_id) -> dict:

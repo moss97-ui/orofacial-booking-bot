@@ -1,10 +1,20 @@
-# OroFacial booking bot (Python)
+# Clinic booking bot (Python)
 
-A Telegram bot that books dental appointments for the OroFacial clinic (Yerevan). Patients choose a doctor, a visit
+A Telegram bot that books dental appointments for a clinic (first built for the OroFacial clinic, Yerevan). Patients choose a doctor, a visit
 reason, a day and a time. The doctor approves in Telegram, and only then the visit is added to Google Calendar.
 
-This is the Python version of the n8n workflow **"OroFacial - Booking bot"**. It has the same features and the same
-Armenian texts, and it runs on any server without n8n. Tests compare it with the original n8n code (see *Tests* below).
+This is the Python version of the n8n workflows **"OroFacial - Booking bot"** and **"Clinic - Booking bot"**. It runs
+on any server without n8n (for example [Railway](#deploy-on-railway)), and tests compare it with the n8n code
+(see *Tests* below). One program, two setups:
+
+| Setup | Config file | Behaves like the n8n workflow |
+|---|---|---|
+| OroFacial clinic, Armenian only | `config/clinic.example.yaml` | "OroFacial - Booking bot" |
+| Generic clinic, 🇦🇲 Armenian / 🇬🇧 English / 🇷🇺 Russian | `config/clinic.generic.example.yaml` | "Clinic - Booking bot" (@ClinicBookingAssistant_bot) |
+
+With several languages, `/start` (and the first message of a new user) shows the language buttons. The choice is
+remembered, every message and button is translated, and translated button taps are understood. Translations come
+from `n8n/clinic-i18n.json`, the same file the n8n workflow uses.
 
 ## What it does
 
@@ -33,6 +43,7 @@ Armenian texts, and it runs on any server without n8n. Tests compare it with the
 bot/
   main.py              Telegram connection (polling or webhook), runs reminders every 30 min
   router.py            decides what to do with each message / button tap (pure logic)
+  i18n.py              languages: language choice, translation of messages and buttons
   actions.py           carries out the decision: messages, database, calendar
   slots.py             free times and free days (doctor shift − calendar events − other requests)
   jobs.py              reminders and rating requests
@@ -46,6 +57,7 @@ n8n/                   n8n workflows (exports, without credentials): the origina
                        generic 3-language "Clinic - Booking bot", with its JavaScript in n8n/clinic-code/
                        (see n8n/README.md)
 deploy/                systemd service file
+railway.json           Railway settings (build with the Dockerfile, restart on failure)
 ```
 
 ## 1. What you need
@@ -128,6 +140,40 @@ journalctl -u orofacial-bot -f
 - **Webhook**: set `WEBHOOK_URL=https://your-domain` and `WEBHOOK_SECRET=<random text>`. The bot listens on `PORT`
   at `/telegram`. Put an HTTPS reverse proxy (Caddy, nginx) in front of it.
 
+## Deploy on Railway
+
+[Railway](https://railway.com) runs the bot from this GitHub repository and redeploys it on every push. The bot uses
+long polling, so it needs no domain or open port.
+
+> ⚠️ **Only one program may run a Telegram bot at a time.** Before you start the Railway bot with the token of
+> @ClinicBookingAssistant_bot, **unpublish the n8n workflow** "Clinic - Booking bot" (n8n: open the workflow →
+> *Unpublish*). Bookings, sessions and waitlist entries stored in the n8n data tables are not copied over.
+
+1. **Google service account** (one time): follow [step 2 of *What you need*](#1-what-you-need). Share the clinic's
+   Google Calendar with the service account's e-mail and give it **"Make changes to events"**.
+2. On Railway: **New Project → Deploy from GitHub repo →** choose this repository. Railway finds `railway.json` and
+   builds the `Dockerfile`.
+3. **Add a volume** to the service (right-click the service → *Attach volume*), mount path **`/data`**. This keeps
+   the database (bookings, sessions, languages) when the bot restarts or redeploys.
+4. Open the service's **Variables** tab and add:
+
+   | Variable | Value |
+   |---|---|
+   | `TELEGRAM_BOT_TOKEN` | the bot token from @BotFather |
+   | `CLINIC_CONFIG` | `config/clinic.generic.example.yaml` |
+   | `CALENDAR_ID` | the Google Calendar ID used by all doctors (`…@group.calendar.google.com`) |
+   | `APPROVER_CHAT_ID` | the Telegram chat ID that approves requests (send `/myid` to the bot) |
+   | `GOOGLE_SERVICE_ACCOUNT_JSON` | the whole content of the service-account JSON key |
+   | `DATABASE_PATH` | `/data/bot.sqlite3` |
+   | `RAILWAY_RUN_UID` | `0` (lets the bot write to the volume) |
+
+   For your own clinic details (name, phones, address, doctors, prices), paste a complete clinic YAML into
+   **`CLINIC_CONFIG_YAML`** instead of using `CLINIC_CONFIG`. Start from `config/clinic.generic.example.yaml`.
+5. Deploy and open **Logs**. You should see `Languages: hy, en, ru` and `Starting long polling`. Then send `/start`
+   to the bot.
+
+Translations: edit `n8n/clinic-i18n.json` on GitHub; Railway redeploys automatically with the new texts.
+
 ## 5. Backups
 
 All bookings are in one file: `data/bot.sqlite3`. Copy it regularly, for example with a daily cron job:
@@ -148,10 +194,14 @@ pytest -q
   rating, reports, calendar outage, and an unreachable doctor.
 - GitHub Actions runs the tests on every push (`.github/workflows/tests.yml`).
 
+- `tests/test_i18n.py` runs the n8n **"Lang pack"** and **"Parse update"** JavaScript of the Clinic bot next to
+  `bot/i18n.py`: the translation lists must be identical, and ~900 typed / tapped texts must be read the same way.
+  It also books a visit in English and in Russian from start to doctor approval.
+
 One difference from n8n is intentional. In n8n, a staff member who typed an impossible date such as `9.30` while
 blocking time got no answer, because the workflow crashed. The Python bot replies "Չհասկացա ամսաթիվը…" instead.
 
 ## Not included yet
 
 These ideas were discussed but not built: a consent and privacy notice, a reception "backup approver" with alerts
-for unanswered requests, Russian and English texts, booking added by staff for phone calls, and no-show tracking.
+for unanswered requests, booking added by staff for phone calls, and no-show tracking.
