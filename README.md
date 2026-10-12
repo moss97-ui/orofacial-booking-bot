@@ -16,7 +16,8 @@ Armenian texts, and it runs on any server without n8n. Tests compare it with the
 - Get the doctor's answer in Telegram, then directions to the clinic (Yandex Maps).
 - Get reminders 1 day and 2 hours before the visit, with ✅ Կգամ / ❌ Չեմ կարող գալ / 🔁 Փոխել ժամը buttons.
 - Manage bookings in 📋 Իմ ամրագրումները: cancel, or change the time (the old booking is cancelled only after the new one is approved).
-- Join the 🔔 waitlist when there is no free time, and get a message when a booking with that doctor is cancelled.
+- Join the 🔔 waitlist from the date or time list (also when there are free times but none suits them). When a booking with that
+  doctor is cancelled, waitlisted patients get a "slot is free" message, and the doctor is told which waitlisted patients were notified.
 - Rate the visit (1–5 ⭐) afterwards. High ratings get a Yandex review link; low ratings alert the clinic.
 - Use 📞 Կապ կլինիկայի հետ (phone, Telegram, WhatsApp, Viber, Instagram, map) and ❓ Ինչպես օգտվել (help).
 

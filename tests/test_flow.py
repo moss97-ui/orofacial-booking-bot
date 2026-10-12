@@ -157,10 +157,38 @@ async def test_cancel_notifies_waitlist(env):
     assert env.tg.edits[-1]["inline"][0][0]["callback_data"] == "cy|" + rid
     await env.tap(PATIENT, "cy|" + rid)
     assert env.db.get_request(rid)["status"] == "cancelled" and env.cal.events["shared-cal"] == []
-    assert env.tg.last(STAFF)["text"].startswith("❌ Պացիենտը չեղարկեց ամրագրումը")
+    staff = [m["text"] for m in env.tg.sent if m["chat_id"] == STAFF]
+    assert staff[-2].startswith("❌ Պացիենտը չեղարկեց ամրագրումը")
     note = env.tg.last(PATIENT2)
     assert note["text"].startswith("🔔 Լավ լուր․ ժամ է ազատվել") and note["kb"][0] == ["Արամ Սարգսյան"]
+    # the doctor is told that a waitlisted patient was notified
+    assert staff[-1].startswith("🔔 Սպասման ցուցակ\nԱզատված ժամ՝ 2026-10-14, 09:00 · Արամ Սարգսյան")
+    assert "տեղեկացվել է սպասման ցուցակի 1 պացիենտ" in staff[-1]
     assert env.db.waiting_for_doctor("aram") == []
+
+
+async def test_waitlist_from_time_list(env):
+    rid = await book(env)  # patient 1: 2026-10-14 09:00 with Aram
+    await env.tap(STAFF, "ap|" + rid)
+    # patient 2 sees free times on the same day, none suits them -> joins the waitlist for that day
+    await env.say(PATIENT2, "/start"); await env.say(PATIENT2, "👨‍⚕️ Ընտրել բժիշկ"); await env.say(PATIENT2, "Արամ Սարգսյան")
+    await env.say(PATIENT2, "⚡ Սուր ցավ"); await env.say(PATIENT2, "📅 Հոկտեմբեր 2026")
+    assert "🔔 Սպասման ցուցակ" in env.tg.buttons(PATIENT2) and "Հարմար օր չգտա՞ք" in env.tg.last(PATIENT2)["text"]
+    await env.say(PATIENT2, "հոկ 14 Չրք")
+    assert "🔔 Սպասման ցուցակ" in env.tg.buttons(PATIENT2) and "Ոչ մի ժամ չի՞ համապատասխանում" in env.tg.last(PATIENT2)["text"]
+    await env.say(PATIENT2, "🔔 Սպասման ցուցակ")
+    assert "Օր՝ 2026-10-14" in env.tg.last(PATIENT2)["text"]
+    # the booking on that day is cancelled -> they are notified, and the doctor sees their wanted day
+    await env.tap(PATIENT, "cx|" + rid); await env.tap(PATIENT, "cy|" + rid)
+    assert env.tg.last(PATIENT2)["text"].startswith("🔔 Լավ լուր․ ժամ է ազատվել\nԲժիշկ՝ Արամ Սարգսյան\nԱմսաթիվ՝ 2026-10-14, ժամ՝ 09:00")
+    assert "(ցանկալի օր՝ 2026-10-14)" in env.tg.last(STAFF)["text"]
+
+
+async def test_no_waitlist_note_when_nobody_waits(env):
+    rid = await book(env)
+    await env.tap(STAFF, "ap|" + rid)
+    await env.tap(PATIENT, "cx|" + rid); await env.tap(PATIENT, "cy|" + rid)
+    assert env.tg.last(STAFF)["text"].startswith("❌ Պացիենտը չեղարկեց ամրագրումը")
 
 
 async def test_time_change(env):

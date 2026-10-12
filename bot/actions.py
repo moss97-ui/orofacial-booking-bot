@@ -10,7 +10,7 @@ from .clinic import Clinic
 from .db import DB
 from .reports import build_staff_report
 from .slots import compute_available_dates, compute_free_slots
-from .texts import (CALENDAR_DOWN, HOME_KB, INFO_HINT, L, NAV, RETRY_KB, S, STAFF_KB, TRY_OTHER, WAITLIST_HINT, WELCOME,
+from .texts import (CALENDAR_DOWN, DATE_WAITLIST_HINT, TIME_WAITLIST_HINT, HOME_KB, INFO_HINT, L, NAV, RETRY_KB, S, STAFF_KB, TRY_OTHER, WAITLIST_HINT, WELCOME,
                     WELCOME_KB)
 from .timeutil import HOUR, MIN, local_stamp, now_ms, parse_ms, start_of_day_iso, start_of_month_plus
 
@@ -133,7 +133,7 @@ class Bot:
         if res["pick_month"]:
             await self.send(r["chat_id"], res["reply"], kb=[[x] for x in res["month_labels"]] + [NAV])
         elif res["has_dates"]:
-            await self.send(r["chat_id"], res["reply"], kb=rows_of(res["labels"], 4) + [[res["toggle"]], NAV])
+            await self.send(r["chat_id"], res["reply"] + DATE_WAITLIST_HINT, kb=rows_of(res["labels"], 4) + [[res["toggle"], L["waitlist"]], NAV])
         else:
             await self.send(r["chat_id"], res["reply"] + WAITLIST_HINT, kb=[[res["toggle"]], [L["waitlist"]], NAV])
 
@@ -156,7 +156,7 @@ class Bot:
                                quick_rebook=r["quick_rebook"], request_id="", slot_options=res["free_json"],
                                stage=res["next_stage"], updated_note="slots offered")
         if res["has_free"]:
-            await self.send(r["chat_id"], res["reply"], kb=rows_of(res["free"], 4) + [NAV])
+            await self.send(r["chat_id"], res["reply"] + TIME_WAITLIST_HINT, kb=rows_of(res["free"], 4) + [[L["waitlist"]], NAV])
         else:
             await self.send(r["chat_id"], res["reply"].replace("«Այլ ամսաթիվ»", "«⬅️ Հետ»՝ այլ օր ընտրելու համար") + WAITLIST_HINT,
                             kb=[[L["waitlist"]], NAV])
@@ -347,7 +347,7 @@ class Bot:
         """A booking was cancelled: tell waitlisted patients of this doctor (any day, or exactly this day)."""
         if not ((parse_ms(r["slot_start"]) or 0) > now_ms() + 30 * MIN):
             return
-        seen = set()
+        seen, told = set(), []
         for w in self.db.waiting_for_doctor(r["doctor_key"]):
             cid = str(w["chat_id"])
             if cid == str(r["patient_chat_id"] or r["chat_id"]) or (w["wanted_date"] and w["wanted_date"] != r["date"]) or cid in seen:
@@ -357,6 +357,15 @@ class Bot:
                             + "\n\nԱմրագրելու համար սեղմեք բժշկի անունը ստորև և ընտրեք ժամը։ Ժամը կստանա առաջինը ամրագրողը։",
                             kb=[[r["doctor_name"]], [L["home"]]])
             self.db.mark_waitlist(cid, r["doctor_key"], "notified", "slot freed " + r["date"] + " " + r["selected_time"])
+            told.append(w)
+        # Tell the doctor / approver that waitlisted patients were told about the freed time.
+        if told and r.get("approver_chat_id"):
+            lines = [str(i + 1) + ". " + (w.get("patient_name") or "Անանուն պացիենտ")
+                     + (" (ցանկալի օր՝ " + w["wanted_date"] + ")" if w.get("wanted_date") else "") for i, w in enumerate(told[:10])]
+            await self.send(r["approver_chat_id"], "🔔 Սպասման ցուցակ\nԱզատված ժամ՝ " + r["date"] + ", " + r["selected_time"] + " · " + r["doctor_name"]
+                            + "\n\nԱյս ժամի մասին տեղեկացվել է սպասման ցուցակի " + str(len(told)) + " պացիենտ՝\n" + "\n".join(lines)
+                            + ("\n…" if len(told) > 10 else "")
+                            + "\n\nԺամը կստանա առաջինը ամրագրողը։ Նոր հայտը կգա Ձեզ սովորական կարգով՝ հաստատելու համար։")
 
     async def a_change_booking(self, r, p):
         await self.answer(r)
