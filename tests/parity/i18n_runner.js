@@ -1,8 +1,8 @@
-// Runs the n8n Clinic bot's "Lang pack" and the language part of "Parse update" (n8n/clinic-code/*.js) on test cases
+// Runs the n8n Clinic bot's "Lang pack" and the language part of "Parse update" (tests/parity/n8n-code/*.js) on test cases
 // from stdin and prints the results, so tests/test_i18n.py can compare them with bot/i18n.py.
 const fs = require('fs');
 const path = require('path');
-const dir = path.join(__dirname, '..', '..', 'n8n', 'clinic-code');
+const dir = path.join(__dirname, 'n8n-code');
 const langPack = fs.readFileSync(path.join(dir, 'lang-pack.js'), 'utf8');
 let parse = fs.readFileSync(path.join(dir, 'parse-update.js'), 'utf8');
 // The doctor-info part after the language block is handled by the Python router itself; compare up to that point.

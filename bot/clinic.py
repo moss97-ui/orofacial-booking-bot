@@ -73,7 +73,7 @@ def load_clinic(path: str | Path) -> Clinic:
     booking.update(raw.get("booking") or {})
     name = raw["clinic"]["name"]
     # Wording that contains the clinic name. Defaults give the OroFacial texts; a generic clinic overrides them
-    # in clinic.phrases (see config/clinic.generic.example.yaml).
+    # in clinic.phrases (see tests/clinic_generic_test.yaml).
     phrases = {
         "welcome_place": name + " ատամնաբուժական կլինիկա",   # Բարի գալուստ ___։
         "thanks_to": name + " կլինիկային",                     # Շնորհակալություն, որ դիմեցիք ___ 🦷

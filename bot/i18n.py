@@ -5,7 +5,7 @@ Works exactly like the n8n "Clinic - Booking bot":
   with its translation for the receiver's language ("pack" = list of [Armenian, translation] pairs, longest first).
 * When a patient taps a translated button, the text is turned back into the Armenian label ("reverse pack"), so the
   router sees the same input as in Armenian.
-* Translations come from n8n/clinic-i18n.json (the same file the n8n workflow downloads from GitHub).
+* Translations come from i18n/base-i18n.json.
   Date labels ("հոկ 15 Հնգ"), month names and weekday names are generated here, as in the n8n "Lang pack" node.
 
 Port of the n8n Code nodes "Lang pack" and the language part of "Parse update".

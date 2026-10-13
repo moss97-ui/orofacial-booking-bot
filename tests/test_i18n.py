@@ -1,6 +1,6 @@
 """Languages: the Python port must translate exactly like the n8n "Clinic - Booking bot".
 
-* Parity: the real n8n JavaScript ("Lang pack" + the language part of "Parse update", in n8n/clinic-code/) and
+* Parity: the real n8n JavaScript ("Lang pack" + the language part of "Parse update", in tests/parity/n8n-code/) and
   bot/i18n.py are run on the same inputs; the translation lists and the parsed messages must be identical.
 * End to end: a patient picks English / Russian on /start and books a visit by tapping the translated buttons.
 """
@@ -25,7 +25,7 @@ from bot.timeutil import at
 
 HERE = Path(__file__).parent
 ROOT = HERE.parent
-DATA = json.loads((ROOT / "n8n" / "clinic-i18n.json").read_text(encoding="utf-8"))
+DATA = json.loads((ROOT / "i18n" / "base-i18n.json").read_text(encoding="utf-8"))
 node = pytest.mark.skipif(shutil.which("node") is None, reason="Node.js not installed")
 
 
@@ -58,7 +58,7 @@ def test_packs_match_n8n():
 
 
 def sample_inputs():
-    clinic = load_clinic(ROOT / "config" / "clinic.generic.example.yaml")
+    clinic = load_clinic(HERE / "clinic_generic_test.yaml")
     hy = list(L.values()) + list(S.values()) + [d["doctor_name"] for d in clinic.doctors] + [d["info_label"] for d in clinic.doctors]
     hy += [r["label"] for r in clinic.reasons] + [clinic.service_name(k) for k in clinic.specialties]
     hy += ["📅 Հոկտեմբեր 2026", "📅 Նոյեմբեր →", "← 📅 Հոկտեմբեր", "հոկ 14 Չրք", "նոյ 4 Չրք", "Այո, չեղարկել հայտը", "Ոչ, սպասել"]
@@ -81,7 +81,7 @@ def test_parse_update_language_step_matches_n8n():
     js = run_js([{"now": NOWS[0], "rows": saved[s], "update": update(t)} for t, s in cases])
     timeutil.set_now(NOWS[0])
     try:
-        i18n = I18n(ROOT / "n8n" / "clinic-i18n.json", ["hy", "en", "ru"])
+        i18n = I18n(ROOT / "i18n" / "base-i18n.json", ["hy", "en", "ru"])
         bad = []
         for (t, s), j in zip(cases, js):
             langs = {r["chat_id"]: r["lang"] for r in saved[s]}
@@ -120,11 +120,11 @@ class FakeTelegram:
 @pytest.fixture
 def env(tmp_path):
     timeutil.set_now(at("2026-10-12", "10:00"))
-    clinic = load_clinic(ROOT / "config" / "clinic.generic.example.yaml")
+    clinic = load_clinic(HERE / "clinic_generic_test.yaml")
     for d in clinic.doctors:
         d["approver_chat_id"] = "9"
     db, tg = DB(tmp_path / "t.sqlite3"), FakeTelegram()
-    bot = Bot(db, clinic, MemoryCalendar(), tg, I18n(ROOT / "n8n" / "clinic-i18n.json", clinic.languages))
+    bot = Bot(db, clinic, MemoryCalendar(), tg, I18n(ROOT / "i18n" / "base-i18n.json", clinic.languages))
 
     async def say(chat, text):
         await bot.handle_update(py_parse(text, chat))

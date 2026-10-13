@@ -4,7 +4,7 @@
 # Restart the bot after changes.
 
 # Languages. With more than one, /start asks the patient to choose (🇦🇲 / 🇬🇧 / 🇷🇺) and every message is translated.
-# English and Russian texts come from n8n/clinic-i18n.json. Use [hy] for an Armenian-only bot.
+# English and Russian texts come from i18n/base-i18n.json. Use [hy] for an Armenian-only bot.
 languages: [hy, en, ru]
 
 clinic:

@@ -54,7 +54,7 @@ def load_settings() -> Settings:
         clinic_config=clinic_config,
         database_path=os.environ.get("DATABASE_PATH", "data/bot.sqlite3"),
         google_service_account_file=sa_file,
-        i18n_file=os.environ.get("I18N_FILE", "n8n/clinic-i18n.json"),
+        i18n_file=os.environ.get("I18N_FILE", "i18n/base-i18n.json"),
         webhook_url=os.environ.get("WEBHOOK_URL", ""),
         webhook_secret=os.environ.get("WEBHOOK_SECRET", ""),
         port=int(os.environ.get("PORT", "8080")),

@@ -1,20 +1,16 @@
-# Clinic booking bot (Python)
+# OroFacial booking bot (Python)
 
-A Telegram bot that books dental appointments for a clinic (first built for the OroFacial clinic, Yerevan). Patients choose a doctor, a visit
-reason, a day and a time. The doctor approves in Telegram, and only then the visit is added to Google Calendar.
+A Telegram bot that books dental appointments for the OroFacial clinic (Yerevan), in Armenian. Patients choose a
+doctor, a visit reason, a day and a time. The doctor approves in Telegram, and only then the visit is added to Google
+Calendar.
 
-This is the Python version of the n8n workflows **"OroFacial - Booking bot"** and **"Clinic - Booking bot"**. It runs
-on any server without n8n (for example [Railway](#deploy-on-railway)), and tests compare it with the n8n code
-(see *Tests* below). One program, two setups:
+This is the Python version of the n8n workflow **"OroFacial - Booking bot"**. It runs on any server without n8n (for
+example [Railway](#deploy-on-railway)), and tests compare it with the n8n code (see *Tests* below). The clinic's
+doctors, hours, services, prices and contacts are in `config/clinic.example.yaml`.
 
-| Setup | Config file | Behaves like the n8n workflow |
-|---|---|---|
-| OroFacial clinic, Armenian only | `config/clinic.example.yaml` | "OroFacial - Booking bot" |
-| Generic clinic, 🇦🇲 Armenian / 🇬🇧 English / 🇷🇺 Russian | `config/clinic.generic.example.yaml` | "Clinic - Booking bot" (@ClinicBookingAssistant_bot) |
-
-With several languages, `/start` (and the first message of a new user) shows the language buttons. The choice is
-remembered, every message and button is translated, and translated button taps are understood. Translations come
-from `n8n/clinic-i18n.json`, the same file the n8n workflow uses.
+**Other versions, each in its own repository:**
+[clinic-booking-bot](https://github.com/moss97-ui/clinic-booking-bot): any clinic, in Armenian, English and Russian ·
+[salon-booking-bot](https://github.com/moss97-ui/salon-booking-bot): beauty and nail salons.
 
 ## What it does
 
@@ -53,9 +49,8 @@ bot/
   clinic.py            reads config/clinic.yaml
 config/clinic.example.yaml   doctors, hours, services, prices, contacts — copy to config/clinic.yaml
 tests/                 parity tests against the n8n code + end-to-end tests
-n8n/                   n8n workflows (exports, without credentials): the original OroFacial bot and the
-                       generic 3-language "Clinic - Booking bot", with its JavaScript in n8n/clinic-code/
-                       (see n8n/README.md)
+n8n/                   the n8n workflow "OroFacial - Booking bot" (export, without credentials)
+i18n/                  English / Russian texts, used only if the config lists more than one language
 deploy/                systemd service file
 railway.json           Railway settings (build with the Dockerfile, restart on failure)
 ```
@@ -145,9 +140,8 @@ journalctl -u orofacial-bot -f
 [Railway](https://railway.com) runs the bot from this GitHub repository and redeploys it on every push. The bot uses
 long polling, so it needs no domain or open port.
 
-> ⚠️ **Only one program may run a Telegram bot at a time.** Before you start the Railway bot with the token of
-> @ClinicBookingAssistant_bot, **unpublish the n8n workflow** "Clinic - Booking bot" (n8n: open the workflow →
-> *Unpublish*). Bookings, sessions and waitlist entries stored in the n8n data tables are not copied over.
+> ⚠️ **Only one program may run a Telegram bot at a time.** If the n8n workflow "OroFacial - Booking bot" still runs
+> with the same token, **unpublish it** first. Bookings stored in the n8n data tables are not copied over.
 
 1. **Google service account** (one time): follow [step 2 of *What you need*](#1-what-you-need). Share the clinic's
    Google Calendar with the service account's e-mail and give it **"Make changes to events"**.
@@ -160,19 +154,16 @@ long polling, so it needs no domain or open port.
    | Variable | Value |
    |---|---|
    | `TELEGRAM_BOT_TOKEN` | the bot token from @BotFather |
-   | `CLINIC_CONFIG` | `config/clinic.generic.example.yaml` |
+   | `CLINIC_CONFIG` | `config/clinic.example.yaml` |
    | `CALENDAR_ID` | the Google Calendar ID used by all doctors (`…@group.calendar.google.com`) |
    | `APPROVER_CHAT_ID` | the Telegram chat ID that approves requests (send `/myid` to the bot) |
    | `GOOGLE_SERVICE_ACCOUNT_JSON` | the whole content of the service-account JSON key |
    | `DATABASE_PATH` | `/data/bot.sqlite3` |
    | `RAILWAY_RUN_UID` | `0` (lets the bot write to the volume) |
 
-   For your own clinic details (name, phones, address, doctors, prices), paste a complete clinic YAML into
-   **`CLINIC_CONFIG_YAML`** instead of using `CLINIC_CONFIG`. Start from `config/clinic.generic.example.yaml`.
-5. Deploy and open **Logs**. You should see `Languages: hy, en, ru` and `Starting long polling`. Then send `/start`
-   to the bot.
-
-Translations: edit `n8n/clinic-i18n.json` on GitHub; Railway redeploys automatically with the new texts.
+   To change doctors, prices or contacts, paste your edited copy of `config/clinic.example.yaml` into
+   **`CLINIC_CONFIG_YAML`** instead of using `CLINIC_CONFIG`.
+5. Deploy and open **Logs**. You should see `Starting long polling`. Then send `/start` to the bot.
 
 ## 5. Backups
 
