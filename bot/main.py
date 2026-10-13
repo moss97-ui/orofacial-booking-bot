@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+import sys
 
 from telegram import (InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove,
                       Update)
@@ -98,7 +99,11 @@ def parse_update(update: Update) -> dict:
 
 def build_application():
     settings = load_settings()
-    logging.basicConfig(level=settings.log_level, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    # stdout, so hosting dashboards (Railway) show normal lines as info, not as errors
+    logging.basicConfig(level=settings.log_level, format="%(asctime)s %(levelname)s %(name)s: %(message)s", stream=sys.stdout)
+    # The HTTP client logs every request URL, and Telegram URLs contain the bot token: keep those lines out of the log.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
     clinic = load_clinic(settings.clinic_config)
     db = DB(settings.database_path)
     if settings.google_service_account_file:
