@@ -17,7 +17,7 @@ SESSION_COLS = ["chat_id", "stage", "doctor_key", "doctor_name", "appointment_da
 REQUEST_COLS = ["request_id", "chat_id", "patient_name", "patient_full_name", "patient_phone", "telegram_username",
                 "doctor_key", "service", "slot_start", "slot_end", "slot_key", "status", "expires_at", "decided_by",
                 "calendar_event_id", "replaces_request_id", "reminder_24h_sent", "reminder_2h_sent", "patient_confirmed",
-                "rating", "rating_asked"]
+                "rating", "rating_asked", "source", "promo", "discount", "review"]
 WAITLIST_COLS = ["chat_id", "doctor_key", "doctor_name", "wanted_date", "patient_name", "status", "note"]
 
 SCHEMA = f"""
@@ -57,6 +57,11 @@ class DB:
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA journal_mode=WAL")
         self.conn.executescript(SCHEMA)
+        # Older databases: add request columns that were introduced later (app bookings, promo codes, reviews).
+        have = {r[1] for r in self.conn.execute("PRAGMA table_info(requests)").fetchall()}
+        for c in ("source", "promo", "discount", "review"):
+            if c not in have:
+                self.conn.execute(f"ALTER TABLE requests ADD COLUMN {c} TEXT DEFAULT ''")
         self.lock = threading.Lock()
 
     # --- helpers ---------------------------------------------------------------

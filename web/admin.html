@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="hy">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OroFacial · Վահանակ</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0F3B47">
+  <link rel="icon" href="/static/icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Armenian:wght@400;500;600&family=Noto+Serif+Armenian:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/admin.css">
+</head>
+<body>
+  <div id="login" class="login hidden">
+    <form class="card" id="loginForm">
+      <img src="/static/icons/icon-192.png" alt="" width="48" height="48">
+      <h1>Աշխատակազմի վահանակ</h1>
+      <label class="field"><span>Գաղտնաբառ</span><input class="text" type="password" id="pw" autocomplete="current-password" required></label>
+      <button class="btn block" type="submit">Մուտք</button>
+      <p class="error" id="loginErr"></p>
+    </form>
+  </div>
+
+  <div id="shell" class="shell hidden">
+    <aside class="side">
+      <div class="brand"><img src="/static/icons/icon-192.png" alt="" width="30" height="30"><span>OroFacial</span></div>
+      <nav id="nav">
+        <a href="#overview">Ամփոփում</a>
+        <a href="#schedule">Գրաֆիկ</a>
+        <a href="#blocks">Փակ ժամեր</a>
+        <a href="#catalog">Գներ և բժիշկներ</a>
+        <a href="#promos">Պրոմոկոդեր</a>
+        <a href="#photos">Լուսանկարներ</a>
+        <a href="#reviews">Կարծիքներ</a>
+      </nav>
+      <div class="side-foot"><a href="/" target="_blank" rel="noopener">Բացել հավելվածը</a><button class="linkbtn" id="logout" type="button">Դուրս գալ</button></div>
+    </aside>
+    <main id="main"></main>
+  </div>
+
+  <div id="toast" class="hidden" role="status" aria-live="polite"></div>
+  <script src="/static/admin.js"></script>
+</body>
+</html>

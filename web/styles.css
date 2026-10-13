@@ -1,0 +1,96 @@
+/* OroFacial app — shared styles (patient app + staff dashboard).
+   Palette from the subject: enamel white, deep lagoon ink, mint for actions, gum pink for warmth. */
+:root {
+  --enamel: #FBFCFD;
+  --card: #FFFFFF;
+  --ink: #0F3B47;
+  --slate: #5B6F76;
+  --line: #E3E9EB;
+  --mint: #1E9C8F;
+  --mint-d: #157A70;
+  --mint-soft: #E3F4F1;
+  --gum: #F2D8D5;
+  --gum-d: #B5655C;
+  --warn: #B7791F;
+  --warn-soft: #FDF3E1;
+  --bad: #B23A3A;
+  --bad-soft: #FBE9E9;
+  --shadow: 0 1px 2px rgba(15, 59, 71, .06), 0 6px 18px rgba(15, 59, 71, .06);
+  --serif: "Noto Serif Armenian", Georgia, serif;
+  --sans: "Noto Sans Armenian", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r-lg: 22px;
+  --r-md: 14px;
+  --r-sm: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --enamel: #0C1F25; --card: #12292F; --ink: #E7F1F2; --slate: #9DB3B8; --line: #21404A;
+    --mint: #3CC1B2; --mint-d: #5FD3C6; --mint-soft: #133C3A; --gum: #4A2C2A; --gum-d: #F0A79E;
+    --warn-soft: #3A2E15; --bad-soft: #3B1B1B; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --enamel: #0C1F25; --card: #12292F; --ink: #E7F1F2; --slate: #9DB3B8; --line: #21404A;
+  --mint: #3CC1B2; --mint-d: #5FD3C6; --mint-soft: #133C3A; --gum: #4A2C2A; --gum-d: #F0A79E;
+  --warn-soft: #3A2E15; --bad-soft: #3B1B1B; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--enamel); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+}
+h1, h2, h3 { font-family: var(--serif); font-weight: 700; line-height: 1.2; margin: 0; }
+h1 { font-size: 1.75rem; }
+h2 { font-size: 1.3rem; }
+h3 { font-size: 1.05rem; }
+p { margin: 0; }
+a { color: var(--mint-d); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--mint); outline-offset: 2px; border-radius: 6px; }
+.muted { color: var(--slate); }
+.small { font-size: .875rem; }
+.hidden { display: none !important; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* ---------- buttons and inputs ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 48px; padding: 0 1.25rem;
+  border: 0; border-radius: 999px; background: var(--mint); color: #fff; font-weight: 600; cursor: pointer; text-decoration: none;
+}
+.btn:hover { background: var(--mint-d); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.block { width: 100%; }
+.btn.ghost { background: transparent; color: var(--mint-d); box-shadow: inset 0 0 0 1.5px var(--line); }
+.btn.ghost:hover { background: var(--mint-soft); }
+.btn.danger { background: transparent; color: var(--bad); box-shadow: inset 0 0 0 1.5px var(--bad-soft); }
+.btn.small { min-height: 38px; padding: 0 .9rem; font-size: .9rem; }
+label.field { display: block; margin: .75rem 0; }
+label.field > span { display: block; font-size: .875rem; color: var(--slate); margin-bottom: .3rem; }
+input.text, select.text, textarea.text {
+  width: 100%; min-height: 48px; padding: .7rem .9rem; border-radius: var(--r-sm); border: 1.5px solid var(--line);
+  background: var(--card); outline: none;
+}
+textarea.text { min-height: 90px; resize: vertical; }
+input.text:focus, select.text:focus, textarea.text:focus { border-color: var(--mint); }
+.error { color: var(--bad); font-size: .9rem; margin-top: .5rem; }
+
+/* ---------- cards, pills ---------- */
+.card { background: var(--card); border-radius: var(--r-md); box-shadow: var(--shadow); padding: 1rem; }
+.pill { display: inline-block; padding: .15rem .6rem; border-radius: 999px; font-size: .8rem; font-weight: 600; white-space: nowrap; }
+.pill.approved { background: var(--mint-soft); color: var(--mint-d); }
+.pill.pending, .pill.approving { background: var(--warn-soft); color: var(--warn); }
+.pill.cancelled, .pill.rejected, .pill.expired { background: var(--bad-soft); color: var(--bad); }
+.stars { color: #E2A33A; letter-spacing: 1px; }
+
+/* ---------- toast ---------- */
+#toast {
+  position: fixed; left: 50%; bottom: calc(88px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 50;
+  background: var(--ink); color: var(--enamel); padding: .7rem 1.1rem; border-radius: 999px; font-size: .95rem; max-width: calc(100% - 32px);
+  box-shadow: var(--shadow);
+}
+@media (prefers-reduced-motion: no-preference) { #toast { animation: rise .25s ease-out; } }
+@keyframes rise { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }

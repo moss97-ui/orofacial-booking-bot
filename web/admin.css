@@ -1,0 +1,64 @@
+/* Staff dashboard: a left rail on wide screens, a scrolling tab strip on phones. */
+.login { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+.login form { width: 100%; max-width: 380px; padding: 28px 24px; }
+.login h1 { font-size: 1.4rem; margin: 12px 0 4px; }
+
+.shell { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100vh; }
+.shell > * { min-width: 0; }
+.side { background: var(--ink); color: var(--enamel); padding: 20px 14px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; }
+.side .brand { display: flex; align-items: center; gap: 10px; font-family: var(--serif); font-weight: 700; font-size: 1.15rem; padding: 0 8px 18px; }
+.side .brand img { border-radius: 8px; }
+.side nav { display: grid; gap: 2px; }
+.side nav a { color: inherit; opacity: .78; text-decoration: none; padding: 10px 12px; border-radius: 10px; font-weight: 500; }
+.side nav a:hover { opacity: 1; background: rgba(255,255,255,.06); }
+.side nav a.on { opacity: 1; background: rgba(255,255,255,.12); box-shadow: inset 3px 0 0 var(--gum); }
+.side-foot { margin-top: auto; display: grid; gap: 8px; padding: 0 12px; font-size: .9rem; }
+.side-foot a, .linkbtn { color: var(--enamel); opacity: .75; background: none; border: 0; padding: 0; text-align: left; cursor: pointer; text-decoration: underline; }
+:root[data-theme] .side { color: #E7F1F2; }
+
+#main { padding: 28px 32px 60px; max-width: 1100px; width: 100%; }
+#main > h1 { margin-bottom: 18px; }
+.sec { margin-top: 28px; }
+.sec > h2 { margin-bottom: 12px; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.stat { background: var(--card); border-radius: var(--r-md); box-shadow: var(--shadow); padding: 14px 16px; }
+.stat b { display: block; font-family: var(--serif); font-size: 1.9rem; line-height: 1.1; }
+.stat span { color: var(--slate); font-size: .875rem; }
+.stat.hot { background: var(--warn-soft); }
+
+table.t { width: 100%; border-collapse: collapse; background: var(--card); border-radius: var(--r-md); box-shadow: var(--shadow); overflow: hidden; }
+.t th, .t td { padding: 10px 12px; text-align: left; border-top: 1px solid var(--line); vertical-align: top; }
+.t th { font-weight: 600; font-size: .85rem; color: var(--slate); border-top: 0; background: var(--enamel); }
+.t td.n { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.t .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.src { font-size: .75rem; color: var(--slate); }
+.day-h { font-family: var(--serif); font-weight: 600; margin: 22px 0 8px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin-bottom: 8px; }
+.toolbar .field { margin: 0; }
+.toolbar input.text, .toolbar select.text { min-height: 42px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.t input.text { min-height: 38px; padding: .4rem .6rem; }
+.photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.photos figure { margin: 0; background: var(--card); border-radius: var(--r-sm); box-shadow: var(--shadow); overflow: hidden; }
+.photos img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+.photos figcaption { padding: 8px 10px; font-size: .8rem; }
+.empty { color: var(--slate); padding: 14px 0; }
+#toast { bottom: 24px; }
+
+@media (max-width: 820px) {
+  .shell { display: block; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .toolbar > * { flex: 1 1 140px; }
+  .side { position: sticky; height: auto; padding: 10px 10px 0; z-index: 5; }
+  .side .brand { padding: 0 6px 8px; }
+  .side nav { display: flex; overflow-x: auto; gap: 4px; padding-bottom: 8px; }
+  .side nav a { white-space: nowrap; padding: 8px 10px; }
+  .side nav a.on { box-shadow: inset 0 -3px 0 var(--gum); }
+  .side-foot { display: none; }
+  #main { padding: 18px 16px 48px; }
+  .t thead { display: none; }
+  .t, .t tbody, .t tr, .t td { display: block; width: 100%; }
+  .t tr { border-top: 1px solid var(--line); padding: 8px 4px; }
+  .t td { border: 0; padding: 3px 10px; }
+}

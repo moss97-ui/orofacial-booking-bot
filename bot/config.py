@@ -29,6 +29,9 @@ class Settings:
     port: int
     reminder_interval_minutes: int
     log_level: str
+    web_app: bool = True
+    admin_password: str = ""
+    uploads_dir: str = "data/uploads"
 
 
 def load_settings() -> Settings:
@@ -60,4 +63,8 @@ def load_settings() -> Settings:
         port=int(os.environ.get("PORT", "8080")),
         reminder_interval_minutes=int(os.environ.get("REMINDER_INTERVAL_MINUTES", "30")),
         log_level=os.environ.get("LOG_LEVEL", "INFO"),
+        # Patient app + staff dashboard on PORT (polling mode). WEB_APP=0 turns it off.
+        web_app=os.environ.get("WEB_APP", "1") not in ("0", "false", "no"),
+        admin_password=os.environ.get("ADMIN_PASSWORD", ""),
+        uploads_dir=os.environ.get("UPLOADS_DIR", str(Path(os.environ.get("DATABASE_PATH", "data/bot.sqlite3")).parent / "uploads")),
     )

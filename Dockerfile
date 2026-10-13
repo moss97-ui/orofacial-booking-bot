@@ -8,9 +8,12 @@ COPY bot ./bot
 COPY config/clinic.example.yaml ./config/
 # English / Russian translations (only used when the config lists more than one language)
 COPY i18n ./i18n
+# Patient app and staff dashboard (served on PORT next to the bot)
+COPY web ./web
 
 # config/clinic.yaml, .env, secrets/ and data/ are mounted at run time (see docker-compose.yml).
 # On Railway they come from variables instead (see README, "Deploy on Railway").
 RUN useradd -m botuser && mkdir -p /app/data && chown -R botuser /app
 USER botuser
+EXPOSE 8080
 CMD ["python", "-m", "bot.main"]

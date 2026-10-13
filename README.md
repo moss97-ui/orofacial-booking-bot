@@ -165,6 +165,30 @@ long polling, so it needs no domain or open port.
    **`CLINIC_CONFIG_YAML`** instead of using `CLINIC_CONFIG`.
 5. Deploy and open **Logs**. You should see `Starting long polling`. Then send `/start` to the bot.
 
+## Patient app and staff dashboard
+
+The same program also serves an **installable app** for patients and a **dashboard** for the clinic, on `PORT`
+(Railway: *Settings → Networking → Generate domain*). Both use the bot's database and booking rules, so a booking made
+in the app shows up in Telegram and the other way round.
+
+**Patients** (`https://<your-domain>/`, in Armenian; on the phone: *Share → Add to Home Screen* or *Install*):
+the nearest free time on the first screen, doctors with photos and ratings, services and prices, booking in 5 steps,
+sign-in with phone number and a PIN, "My visits" (confirm, cancel, rate and review), notifications (approval,
+reminders), a loyalty card (every N-th visit with a discount) and promo codes.
+
+**Staff** (`https://<your-domain>/admin`, password = the `ADMIN_PASSWORD` variable): today and pending requests with
+approve / reject, the week's schedule, blocking days or hours, prices / visit lengths / bios, the loyalty rule, promo
+codes, photos (doctor portraits, work, the clinic) and reviews.
+
+A request made in the app still goes to the doctor in Telegram with ✅ / ❌ buttons; it can also be approved in the
+dashboard. App patients get their answers as in-app notifications instead of Telegram messages.
+
+| Variable | Value |
+|---|---|
+| `ADMIN_PASSWORD` | a long password for `/admin` (without it the dashboard stays closed) |
+| `WEB_APP` | `0` turns the app off (default: on) |
+| `UPLOADS_DIR` | where photos are stored (default: `uploads/` next to the database, i.e. on the volume) |
+
 ## 5. Backups
 
 All bookings are in one file: `data/bot.sqlite3`. Copy it regularly, for example with a daily cron job:

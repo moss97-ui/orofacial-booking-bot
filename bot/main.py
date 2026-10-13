@@ -16,6 +16,7 @@ from telegram.error import TelegramError
 from telegram.ext import Application, CallbackQueryHandler, ContextTypes, MessageHandler, filters
 
 from .actions import Bot
+from .appdb import AppDB
 from .calendar_service import GoogleCalendar, MemoryCalendar
 from .clinic import load_clinic
 from .config import load_settings
@@ -121,7 +122,11 @@ def build_application():
         log.info("Languages: %s (language choice on /start)", ", ".join(clinic.languages))
 
     app = Application.builder().token(settings.telegram_token).build()
-    bot = Bot(db, clinic, calendar, TelegramMessenger(app), i18n)
+    appdb = AppDB(db)
+    # App patients (chat "web:<id>") get in-app notifications; everyone else gets Telegram messages.
+    from .web import AppMessenger
+    bot = Bot(db, clinic, calendar, AppMessenger(TelegramMessenger(app), appdb), i18n)
+    app.bot_data["clinic_bot"], app.bot_data["appdb"] = bot, appdb
     # One update at a time per chat keeps sessions consistent; different chats run concurrently.
     locks: dict[str, asyncio.Lock] = {}
 
@@ -146,6 +151,28 @@ def build_application():
     return app, settings
 
 
+async def run_polling_with_web(app, settings):
+    """Long polling for Telegram plus the patient app / staff dashboard on PORT, in one process."""
+    from aiohttp import web as aioweb
+
+    from .web import WebApp
+    webapp = WebApp(app.bot_data["clinic_bot"], app.bot_data["appdb"], settings.uploads_dir, settings.admin_password)
+    runner = aioweb.AppRunner(webapp.build(), access_log=None)
+    await runner.setup()
+    await aioweb.TCPSite(runner, "0.0.0.0", settings.port).start()
+    log.info("App on port %s (patients: /, staff: /admin%s)", settings.port, "" if settings.admin_password else " — set ADMIN_PASSWORD to enable")
+    async with app:
+        await app.start()
+        await app.updater.start_polling(allowed_updates=["message", "callback_query"])
+        log.info("Starting long polling")
+        try:
+            await asyncio.Event().wait()
+        finally:
+            await app.updater.stop()
+            await app.stop()
+            await runner.cleanup()
+
+
 def main():
     app, settings = build_application()
     updates = ["message", "callback_query"]
@@ -153,6 +180,8 @@ def main():
         log.info("Starting webhook on port %s -> %s", settings.port, settings.webhook_url)
         app.run_webhook(listen="0.0.0.0", port=settings.port, url_path="telegram", webhook_url=settings.webhook_url.rstrip("/") + "/telegram",
                         secret_token=settings.webhook_secret or None, allowed_updates=updates, drop_pending_updates=False)
+    elif settings.web_app:
+        asyncio.run(run_polling_with_web(app, settings))
     else:
         log.info("Starting long polling")
         app.run_polling(allowed_updates=updates)
